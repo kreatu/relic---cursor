@@ -1,7 +1,7 @@
 
-import React, { useRef, useEffect, useState } from 'react';
-import { motion, useScroll, useTransform, useSpring, MotionValue } from 'framer-motion';
-import { ArrowDown, Instagram, Send } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { ArrowDown, Instagram, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // --- Types ---
 
@@ -27,8 +27,30 @@ const FadeIn: React.FC<FadeInProps> = ({ children, delay = 0, className = "" }) 
   );
 };
 
+const ParallaxBackground: React.FC = () => {
+  const { scrollY } = useScroll();
+  // Коэффициент параллакса: при скролле на 100px, фон двигается на 20px (0.2)
+  const y = useTransform(scrollY, (value) => value * -0.2);
+
+  return (
+    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+      <motion.div 
+        style={{ y }} 
+        className="w-full h-[180%] relative"
+      >
+        <img 
+          src="/Texture 1.png" 
+          alt="Background Texture" 
+          className="w-full h-full object-cover"
+        />
+      </motion.div>
+    </div>
+  );
+};
+
 const ParallaxImage: React.FC<{ src: string; alt: string; className?: string }> = ({ src, alt, className = "" }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const [imageError, setImageError] = React.useState(false);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"]
@@ -38,7 +60,25 @@ const ParallaxImage: React.FC<{ src: string; alt: string; className?: string }> 
   return (
     <div ref={ref} className={`overflow-hidden relative ${className}`}>
       <motion.div style={{ y }} className="w-full h-[120%] relative -top-[10%]">
-        <img src={src} alt={alt} className="w-full h-full object-cover grayscale opacity-80 hover:opacity-100 transition-opacity duration-700" />
+        {imageError ? (
+          <div className="w-full h-full flex items-center justify-center bg-surface border border-white/10">
+            <div className="text-center text-subtext text-xs">
+              <p className="mb-2">Изображение не найдено</p>
+              <p className="text-[10px] opacity-50">Проверьте: public/buddha.png</p>
+            </div>
+          </div>
+        ) : (
+          <img 
+            src={src} 
+            alt={alt} 
+            className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity duration-700"
+            onError={(e) => {
+              console.error('Ошибка загрузки изображения:', src);
+              console.error('Проверьте, что файл buddha.png находится в папке public');
+              setImageError(true);
+            }}
+          />
+        )}
       </motion.div>
       <div className="absolute inset-0 bg-background/10 mix-blend-multiply pointer-events-none" />
     </div>
@@ -65,20 +105,17 @@ const Header: React.FC = () => (
 const Hero: React.FC = () => {
   return (
     <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden px-4">
-      <div className="absolute inset-0 z-0 opacity-40">
-        <img 
-          src="/texture.png" 
-          alt="Background Texture" 
-          className="w-full h-full object-cover grayscale"
-        />
-        <div className="absolute inset-0 bg-background/50 mix-blend-multiply" />
-      </div>
 
       <motion.h1 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1.5, ease: "easeOut" }}
         className="font-serif text-[20vw] md:text-[15rem] leading-none text-text z-10 tracking-tighter select-none"
+        style={{
+          textShadow: '0 4px 16px rgba(0, 0, 0, 0.7), 0 2px 8px rgba(0, 0, 0, 0.6), 0 0 4px rgba(0, 0, 0, 0.9)',
+          WebkitTextStroke: '1px rgba(234, 234, 234, 0.5)',
+          textStroke: '1px rgba(234, 234, 234, 0.5)'
+        }}
       >
         rel!c
       </motion.h1>
@@ -88,6 +125,11 @@ const Hero: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, delay: 0.5 }}
         className="font-sans text-xs md:text-sm tracking-[0.3em] text-subtext mt-4 md:mt-8 text-center uppercase max-w-md z-10"
+        style={{
+          textShadow: '0 2px 8px rgba(0, 0, 0, 0.6), 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 2px rgba(0, 0, 0, 0.8)',
+          WebkitTextStroke: '0.5px rgba(160, 159, 157, 0.4)',
+          textStroke: '0.5px rgba(160, 159, 157, 0.4)'
+        }}
       >
         Мы не создаем искусство.<br className="md:hidden"/> Мы извлекаем его из пластов времени.
       </motion.p>
@@ -110,7 +152,7 @@ const Hero: React.FC = () => {
 };
 
 const Philosophy: React.FC = () => (
-  <section id="philosophy" className="min-h-screen w-full flex flex-col items-center justify-center px-6 bg-background relative overflow-hidden">
+  <section id="philosophy" className="min-h-screen w-full flex flex-col items-center justify-center px-6 relative overflow-hidden">
     <FadeIn className="max-w-4xl text-center">
       <div className="space-y-8">
         <p className="font-serif text-2xl md:text-4xl italic leading-relaxed text-text opacity-90">
@@ -128,27 +170,67 @@ const Philosophy: React.FC = () => (
   </section>
 );
 
-const Artifact: React.FC = () => (
-  <section id="artifact" className="min-h-screen w-full flex flex-col justify-center py-20 px-6 bg-background relative overflow-hidden">
-    <div className="max-w-6xl mx-auto w-full">
-      <FadeIn className="w-full">
-        <div className="border-t border-white/10 mb-12 pt-4 flex justify-between items-end">
-          <h2 className="font-serif text-3xl md:text-5xl">АРТЕФАКТ 001</h2>
-          <span className="font-sans text-xs tracking-widest text-subtext hidden md:block">OBJECT: OBSERVER</span>
-        </div>
-      </FadeIn>
+const Artifact: React.FC = () => {
+  const images = [
+    '/buddha 1.png',
+    '/buddha 2.png',
+    '/buddha 3.png',
+    '/buddha 4.png'
+  ];
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-      <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-center w-full">
-        <FadeIn delay={0.2} className="relative aspect-[3/4] bg-surface w-full">
-          <ParallaxImage 
-            src="https://images.unsplash.com/photo-1614727187346-798e45f287cb?q=80&w=1600&auto=format&fit=crop&sat=-100" 
-            alt="Sculpture of a calm face" 
-            className="w-full h-full object-cover grayscale" 
-          />
-          <div className="absolute bottom-4 left-4 font-mono text-[10px] text-text/50 uppercase">
-            Ref: 293-Alpha<br/>Origin: Unknown
+  const nextImage = () => {
+    setCurrentIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  return (
+    <section id="artifact" className="min-h-screen w-full flex flex-col justify-center py-20 px-6 relative overflow-hidden">
+      <div className="max-w-6xl mx-auto w-full">
+        <FadeIn className="w-full">
+          <div className="border-t border-white/10 mb-12 pt-4 flex justify-between items-end">
+            <h2 className="font-serif text-3xl md:text-5xl">АРТЕФАКТ 001</h2>
+            <span className="font-sans text-xs tracking-widest text-subtext hidden md:block">OBJECT: OBSERVER</span>
           </div>
         </FadeIn>
+
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-center w-full">
+          <FadeIn delay={0.2} className="relative aspect-[3/4] bg-surface w-full overflow-hidden group">
+            <img 
+              src={images[currentIndex]} 
+              alt={`Buddha head sculpture ${currentIndex + 1}`} 
+              className="w-full h-full object-cover" 
+            />
+            <button
+              onClick={prevImage}
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              aria-label="Previous image"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              onClick={nextImage}
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              aria-label="Next image"
+            >
+              <ChevronRight size={20} />
+            </button>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+              {images.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentIndex(index)}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    index === currentIndex ? 'bg-white w-6' : 'bg-white/40 hover:bg-white/60'
+                  }`}
+                  aria-label={`Go to image ${index + 1}`}
+                />
+              ))}
+            </div>
+          </FadeIn>
 
         <div className="space-y-12">
           <FadeIn delay={0.3}>
@@ -173,18 +255,12 @@ const Artifact: React.FC = () => (
         </div>
       </div>
     </div>
-  </section>
-);
+    </section>
+  );
+};
 
 const Method: React.FC = () => (
   <section id="method" className="py-32 relative overflow-hidden">
-    <div className="absolute inset-0 opacity-20 pointer-events-none">
-       <img 
-        src="https://images.unsplash.com/photo-1516962248259-1884618bf927?q=80&w=2000&auto=format&fit=crop&sat=-100" 
-        alt="Texture" 
-        className="w-full h-full object-cover"
-       />
-    </div>
     
     <div className="relative container mx-auto px-6 md:px-12 lg:px-32">
       <FadeIn>
@@ -215,7 +291,7 @@ const Ritual: React.FC = () => (
 );
 
 const Acquisition: React.FC = () => (
-  <section className="py-32 px-6 bg-background border-t border-white/5">
+  <section className="py-32 px-6 border-t border-white/5">
     <div className="max-w-xl mx-auto text-center">
       <FadeIn>
         <div className="w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent mb-12"></div>
@@ -253,20 +329,21 @@ const Footer: React.FC = () => (
 // --- Main App ---
 
 const App: React.FC = () => {
-  const [cursorVariant, setCursorVariant] = useState("default");
-
   return (
-    <div className="min-h-screen bg-background text-text selection:bg-accent selection:text-background">
-      <Header />
-      <main>
-        <Hero />
-        <Philosophy />
-        <Artifact />
-        <Method />
-        <Ritual />
-        <Acquisition />
-      </main>
-      <Footer />
+    <div className="min-h-screen text-text selection:bg-accent selection:text-background relative">
+      <ParallaxBackground />
+      <div className="relative z-10">
+        <Header />
+        <main>
+          <Hero />
+          <Philosophy />
+          <Artifact />
+          <Method />
+          <Ritual />
+          <Acquisition />
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 };
